@@ -21,6 +21,20 @@ if (process.env.VERCEL) {
   console.log('Running in Vercel environment - using memory storage for users');
 }
 
+// Micro-deposit attempt tracking (in-memory for now, use Redis in production)
+const verificationAttempts = new Map(); // Key: setupIntentId, Value: { attempts: number, lastAttempt: timestamp, lockedUntil: timestamp }
+const MAX_ATTEMPTS = 2;
+const LOCKOUT_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Rate limiting for SetupIntent creation (in-memory, use Redis in production)
+const setupIntentRateLimits = new Map(); // Key: clientIp, Value: { count: number, resetTime: timestamp }
+const MAX_SETUP_INTENTS_PER_HOUR = 3;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Blocked bank accounts (in-memory, use database in production)
+// Key: routingNumber_accountNumber, Value: { blockedAt: timestamp, reason: string }
+const blockedBankAccounts = new Map();
+
 // Helper functions for user management
 function getUsers() {
   try {
@@ -36,6 +50,29 @@ function getUsers() {
     console.error('Error reading users file:', error);
     return [];
   }
+}
+
+// Enhanced email validation - RFC 5322 compliant
+function isValidEmail(email) {
+  // RFC 5322 compliant email regex
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  if (!emailRegex.test(email)) {
+    return false;
+  }
+  
+  // Check for disposable email domains
+  const disposableDomains = [
+    'tempmail.com', 'guerrillamail.com', 'mailinator.com', '10minutemail.com',
+    'throwawaymail.com', 'getairmail.com', 'yopmail.com', 'sharklasers.com',
+    'temp-mail.org', 'maildrop.cc', 'fakeinbox.com', 'trashmail.com'
+  ];
+  
+  const domain = email.split('@')[1].toLowerCase();
+  if (disposableDomains.includes(domain)) {
+    return false;
+  }
+  
+  return true;
 }
 
 function saveUsers(users) {
@@ -175,8 +212,8 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    if (!email.includes('@') || !email.includes('.')) {
-      return res.status(400).json({ error: 'Invalid email format' });
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format or disposable email not allowed' });
     }
 
     // Create user
@@ -313,6 +350,22 @@ app.post('/create-setup-intent', async (req, res) => {
       });
     }
 
+    // Enhanced email validation
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ 
+        error: 'Invalid email format or disposable email not allowed' 
+      });
+    }
+
+    // Check if bank account is blocked due to previous NACHA returns
+    const bankAccountKey = `${routingNumber}_${accountNumber.slice(-4)}`;
+    if (blockedBankAccounts.has(bankAccountKey)) {
+      const blockInfo = blockedBankAccounts.get(bankAccountKey);
+      return res.status(403).json({
+        error: `This bank account has been blocked due to: ${blockInfo.reason}. Please use a different bank account or contact support.`
+      });
+    }
+
     // Validate address structure
     if (!address.line1 || !address.city || !address.state || !address.postal_code) {
       return res.status(400).json({ 
@@ -334,8 +387,40 @@ app.post('/create-setup-intent', async (req, res) => {
     // }
 
     // Capture client IP and user agent for fraud detection
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
+    // Support Cloudflare CF-Connecting-IP header for accurate IP detection
+    const clientIp = req.headers['cf-connecting-ip'] || 
+                     req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+                     req.connection.remoteAddress || 
+                     req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
+
+    // Rate limiting check per IP address
+    const now = Date.now();
+    const rateLimitData = setupIntentRateLimits.get(clientIp);
+    
+    if (rateLimitData) {
+      if (now < rateLimitData.resetTime) {
+        // Within the rate limit window
+        if (rateLimitData.count >= MAX_SETUP_INTENTS_PER_HOUR) {
+          const resetMinutes = Math.ceil((rateLimitData.resetTime - now) / (60 * 1000));
+          return res.status(429).json({
+            error: `Rate limit exceeded. You can create ${MAX_SETUP_INTENTS_PER_HOUR} setup intents per hour. Please try again in ${resetMinutes} minutes.`
+          });
+        }
+        rateLimitData.count += 1;
+      } else {
+        // Reset the window
+        rateLimitData.count = 1;
+        rateLimitData.resetTime = now + RATE_LIMIT_WINDOW;
+      }
+      setupIntentRateLimits.set(clientIp, rateLimitData);
+    } else {
+      // First request from this IP
+      setupIntentRateLimits.set(clientIp, {
+        count: 1,
+        resetTime: now + RATE_LIMIT_WINDOW
+      });
+    }
 
     // Create Stripe Customer with complete information
     const customer = await stripe.customers.create({
@@ -440,6 +525,22 @@ app.post('/create-intent', async (req, res) => {
     if (!email || !name || !address || !routingNumber || !accountNumber) {
       return res.status(400).json({ 
         error: 'Missing required fields: email, name, address, routingNumber, accountNumber' 
+      });
+    }
+
+    // Enhanced email validation
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ 
+        error: 'Invalid email format or disposable email not allowed' 
+      });
+    }
+
+    // Check if bank account is blocked due to previous NACHA returns
+    const bankAccountKey = `${routingNumber}_${accountNumber.slice(-4)}`;
+    if (blockedBankAccounts.has(bankAccountKey)) {
+      const blockInfo = blockedBankAccounts.get(bankAccountKey);
+      return res.status(403).json({
+        error: `This bank account has been blocked due to: ${blockInfo.reason}. Please use a different bank account or contact support.`
       });
     }
 
@@ -587,6 +688,22 @@ app.post('/verify-setup-intent', async (req, res) => {
       });
     }
 
+    // Validate descriptor code format (6-character alphanumeric)
+    if (!/^[A-Za-z0-9]{6}$/.test(descriptorCode)) {
+      return res.status(400).json({
+        error: 'Descriptor code must be exactly 6 characters (letters and numbers only)'
+      });
+    }
+
+    // Check if this setup intent is locked due to too many failed attempts
+    const attempts = verificationAttempts.get(setupIntentId);
+    if (attempts && attempts.lockedUntil && Date.now() < attempts.lockedUntil) {
+      const remainingTime = Math.ceil((attempts.lockedUntil - Date.now()) / (60 * 60 * 1000));
+      return res.status(429).json({
+        error: `Too many failed verification attempts. Please try again in ${remainingTime} hours.`
+      });
+    }
+
     // Verify the microdeposits against SetupIntent
     const setupIntent = await stripe.setupIntents.verifyMicrodeposits(
       setupIntentId,
@@ -597,6 +714,9 @@ app.post('/verify-setup-intent', async (req, res) => {
 
     // Get the payment method ID from the setup intent
     const paymentMethodId = setupIntent.payment_method;
+
+    // Reset attempts on successful verification
+    verificationAttempts.delete(setupIntentId);
 
     res.json({
       status: setupIntent.status,
@@ -609,8 +729,26 @@ app.post('/verify-setup-intent', async (req, res) => {
 
   } catch (error) {
     console.error('Error verifying setup intent microdeposits:', error);
-    res.status(500).json({ 
-      error: error.message 
+    
+    // Track failed attempts
+    const currentAttempts = verificationAttempts.get(setupIntentId) || { attempts: 0, lastAttempt: 0, lockedUntil: 0 };
+    currentAttempts.attempts += 1;
+    currentAttempts.lastAttempt = Date.now();
+    
+    // Lock out after MAX_ATTEMPTS failed attempts
+    if (currentAttempts.attempts >= MAX_ATTEMPTS) {
+      currentAttempts.lockedUntil = Date.now() + LOCKOUT_DURATION;
+      verificationAttempts.set(setupIntentId, currentAttempts);
+      return res.status(429).json({
+        error: `Too many failed verification attempts. You have used all ${MAX_ATTEMPTS} attempts. Please contact support or wait 24 hours to try again.`
+      });
+    }
+    
+    verificationAttempts.set(setupIntentId, currentAttempts);
+    const remainingAttempts = MAX_ATTEMPTS - currentAttempts.attempts;
+    
+    res.status(400).json({ 
+      error: `${error.message}. You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.`
     });
   }
 });
@@ -787,6 +925,62 @@ app.post('/webhook', async (req, res) => {
         }
         if (failedPayment.last_payment_error.code) {
           console.error('Error Code:', failedPayment.last_payment_error.code);
+        }
+        // Check for NACHA return codes and block bank account if needed
+        if (failedPayment.last_payment_error.code === 'payment_intent_authentication_failure' ||
+            failedPayment.last_payment_error.decline_code) {
+          const declineCode = failedPayment.last_payment_error.decline_code;
+          // NACHA return codes that indicate the bank account should be blocked
+          const nachaBlockCodes = ['account_closed', 'debit_not_authorized', 'insufficient_funds'];
+          if (nachaBlockCodes.includes(declineCode)) {
+            console.error('NACHA return code detected:', declineCode);
+            console.error('Bank account should be blocked for future payments');
+            // In production, you would retrieve the payment method details and block the routing/account combo
+            // Example: blockBankAccount(routingNumber, accountNumber, declineCode);
+          }
+        }
+      }
+      // Log outcome details for fraud analysis
+      if (failedPayment.outcome) {
+        console.error('Outcome Type:', failedPayment.outcome.type);
+        console.error('Outcome Reason:', failedPayment.outcome.reason);
+        console.error('Outcome Network Status:', failedPayment.outcome.network_status);
+        if (failedPayment.outcome.rule) {
+          console.error('Outcome Rule:', failedPayment.outcome.rule);
+        }
+        if (failedPayment.outcome.seller_message) {
+          console.error('Seller Message:', failedPayment.outcome.seller_message);
+        }
+      }
+      break;
+    case 'charge.failed':
+      const failedCharge = event.data.object;
+      console.error('Charge failed:', failedCharge.id);
+      console.error('Customer:', failedCharge.customer);
+      console.error('Amount:', failedCharge.amount / 100, 'USD');
+      console.error('Failure Code:', failedCharge.failure_code);
+      console.error('Failure Message:', failedCharge.failure_message);
+      
+      // Handle NACHA return codes
+      if (failedCharge.failure_code) {
+        const nachaCodes = {
+          'account_closed': 'R05 - Account Closed',
+          'debit_not_authorized': 'R07 - Authorization Revoked',
+          'customer_requested': 'R08 - Stop Payment'
+        };
+        
+        if (nachaCodes[failedCharge.failure_code]) {
+          console.error('NACHA Return Code:', nachaCodes[failedCharge.failure_code]);
+          console.error('This bank account should be blocked from future use');
+          
+          // In production, retrieve payment method details and block the account
+          // Example: 
+          // const paymentMethod = await stripe.paymentMethods.retrieve(failedCharge.payment_method);
+          // const bankAccountKey = `${paymentMethod.us_bank_account.routing_number}_${paymentMethod.us_bank_account.last4}`;
+          // blockedBankAccounts.set(bankAccountKey, {
+          //   blockedAt: new Date().toISOString(),
+          //   reason: nachaCodes[failedCharge.failure_code]
+          // });
         }
       }
       break;
