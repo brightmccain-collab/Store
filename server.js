@@ -23,7 +23,7 @@ if (process.env.VERCEL) {
 
 // Micro-deposit attempt tracking (in-memory for now, use Redis in production)
 const verificationAttempts = new Map(); // Key: setupIntentId, Value: { attempts: number, lastAttempt: timestamp, lockedUntil: timestamp }
-const MAX_ATTEMPTS = 2;
+const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // Rate limiting for SetupIntent creation (in-memory, use Redis in production)
