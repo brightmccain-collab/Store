@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Premium Jeans Store</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: white;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(240, 147, 251, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.02) 100%);
+      border-radius: 28px;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+      max-width: 450px;
+      width: 100%;
+      padding: 40px;
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(118, 75, 162, 0.2) 0%, transparent 40%);
+      animation: liquidMove 12s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glossy-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.15) 0%, 
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 100%);
+      pointer-events: none;
+      border-radius: 28px 28px 0 0;
+      z-index: 1;
+    }
+    .light-reflection {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 20%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 15%);
+      animation: lightReflection 8s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 2;
+      mix-blend-mode: overlay;
+    }
+    @keyframes liquidMove {
+      0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      25% {
+        transform: translate(3%, 3%) rotate(2deg) scale(1.05);
+      }
+      50% {
+        transform: translate(-2%, 4%) rotate(-1deg) scale(0.98);
+      }
+      75% {
+        transform: translate(4%, -3%) rotate(3deg) scale(1.02);
+      }
+    }
+    @keyframes lightReflection {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+      }
+      100% {
+        transform: translate(5%, 5%) scale(1.1);
+        opacity: 0.8;
+      }
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      margin-bottom: 20px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 3;
+    }
+    .back-link:hover {
+      color: white;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    .back-link span {
+      margin-right: 8px;
+    }
+    h1 {
+      color: white;
+      margin-bottom: 10px;
+      font-size: 32px;
+      position: relative;
+      z-index: 3;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .subtitle {
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 30px;
+      font-size: 16px;
+      position: relative;
+      z-index: 3;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 3;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      font-size: 14px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    input {
+      width: 100%;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      font-size: 16px;
+      color: white;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    input:focus {
+      outline: none;
+      border-color: rgba(102, 126, 234, 0.6);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    button {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      margin-top: 10px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 3;
+      overflow: hidden;
+      box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s ease;
+    }
+    button:hover::before {
+      left: 100%;
+    }
+    button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 15px 35px rgba(102, 126, 234, 0.5),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    }
+    button:disabled {
+      background: rgba(255, 255, 255, 0.1);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .success-message {
+      display: none;
+      background: linear-gradient(135deg, rgba(212, 237, 218, 0.3), rgba(195, 230, 203, 0.2));
+      border: 1px solid rgba(195, 230, 203, 0.4);
+      color: #d4edda;
+      padding: 24px;
+      border-radius: 16px;
+      margin-top: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 3;
+    }
+    .success-message h3 {
+      margin-bottom: 12px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    .error-message {
+      display: none;
+      background: linear-gradient(135deg, rgba(248, 215, 218, 0.3), rgba(245, 198, 203, 0.2));
+      border: 1px solid rgba(245, 198, 203, 0.4);
+      color: #f8d7da;
+      padding: 20px;
+      border-radius: 16px;
+      margin-top: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 3;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      position: relative;
+      z-index: 3;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .register-link {
+      text-align: center;
+      margin-top: 20px;
+      position: relative;
+      z-index: 3;
+    }
+    .register-link a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .register-link a:hover {
+      color: white;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    #auth-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    .auth-button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .auth-button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .auth-button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .auth-button.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-email {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .nav-link:hover {
+      color: white;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    .cart-icon {
+      position: relative;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    .cart-icon:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-wrapper {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-header">
+    <div class="header-left">
+      <a href="/landing.html" style="text-decoration: none;">
+        <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 150px; height: auto; filter: drop-shadow(0 2px 10px rgba(102, 126, 234, 0.3));">
+      </a>
+      <nav class="nav-links">
+        <a href="/landing.html" class="nav-link">Shop</a>
+        <a href="#" class="nav-link">New Arrivals</a>
+        <a href="#" class="nav-link">About</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="cart-icon" onclick="alert('Shopping cart coming soon!')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span class="cart-count">0</span>
+      </div>
+      <div id="auth-container"></div>
+    </div>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="container">
+      <div class="glossy-overlay"></div>
+      <div class="light-reflection"></div>
+      
+      <a href="/landing.html" class="back-link">
+        <span>←</span> Back to Products
+      </a>
+      
+      <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+        <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 150px; height: auto; filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.4));">
+      </div>
+      
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Login to purchase premium jeans</p>
+    
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required placeholder="your@email.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password">
+      </div>
+      
+      <button type="submit" id="submit-btn">Login</button>
+    </form>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Logging you in...</p>
+    </div>
+    
+    <div class="success-message" id="success-message">
+      <h3>✓ Login Successful!</h3>
+      <p>Welcome back to Premium Jeans Store!</p>
+      <p style="margin-top: 15px;">Redirecting to products...</p>
+    </div>
+    
+    <div class="error-message" id="error-message"></div>
+    
+    <div class="register-link">
+      Don't have an account? <a href="/register.html">Register here</a>
+    </div>
+  </div>
+  </div>
+
+  <script>
+    // Initialize Stripe site-wide for fraud detection tracking
+    const stripe = Stripe('pk_live_51Tgmk7RYbXTHJC1tWVfSxiitPQvhftg6UPoaoVnQG8DShKeqRDznNE6mK9JmlG57KOHutri48XvOr17peggNV4tU00gew6CTtS');
+    
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const loading = document.getElementById('loading');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Check authentication status on page load
+    async function checkAuth() {
+      try {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          // User is logged in
+          updateAuthUI(true, data.user.email);
+        } else {
+          // User is not logged in
+          updateAuthUI(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        updateAuthUI(false);
+      }
+    }
+    
+    function updateAuthUI(isAuthenticated, userEmail) {
+      const authContainer = document.getElementById('auth-container');
+      if (authContainer) {
+        // On login page, only show logout if authenticated, otherwise hide auth buttons
+        if (isAuthenticated) {
+          authContainer.innerHTML = `
+            <div class="user-info">
+              <span class="user-email">${userEmail}</span>
+              <button onclick="logout()" class="auth-button">Logout</button>
+            </div>
+          `;
+        } else {
+          // Hide auth buttons on login page since the page itself is for login
+          authContainer.innerHTML = '';
+        }
+      }
+    }
+    
+    async function logout() {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/landing.html';
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
+    // Run auth check on page load
+    document.addEventListener('DOMContentLoaded', checkAuth);
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Reset states
+      successMessage.style.display = 'none';
+      errorMessage.style.display = 'none';
+      loading.style.display = 'block';
+      submitBtn.disabled = true;
+      
+      try {
+        const formData = {
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
+        };
+        
+        // Email validation
+        if (!formData.email.includes('@') || !formData.email.includes('.')) {
+          throw new Error('Please enter a valid email address');
+        }
+        
+        // Password validation
+        if (formData.password.length < 1) {
+          throw new Error('Please enter your password');
+        }
+        
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+        
+        // Show success message
+        loading.style.display = 'none';
+        successMessage.style.display = 'block';
+        form.style.display = 'none';
+        
+        // Redirect to landing page after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/landing.html';
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = error.message || 'An error occurred during login';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

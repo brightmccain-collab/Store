@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" width="300" height="80">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="logoGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="logoShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="rgba(0,0,0,0.3)"/>
+    </filter>
+  </defs>
+  
+  <!-- Logo icon - stylized jeans silhouette -->
+  <g filter="url(#logoGlow)">
+    <!-- Main jeans shape -->
+    <path d="M25 10 L75 10 L78 14 L78 60 L75 70 L25 70 L22 60 L22 14 Z" 
+          fill="url(#logoGradient)" filter="url(#logoShadow)"/>
+    
+    <!-- Waistband -->
+    <rect x="22" y="10" width="56" height="8" rx="2" fill="url(#logoGradient2)" opacity="0.9"/>
+    
+    <!-- Belt loops -->
+    <ellipse cx="35" cy="14" rx="5" ry="2.5" fill="rgba(255,255,255,0.4)"/>
+    <ellipse cx="65" cy="14" rx="5" ry="2.5" fill="rgba(255,255,255,0.4)"/>
+    
+    <!-- Pocket -->
+    <path d="M35 28 L65 28 L62 38 L38 38 Z" fill="rgba(255,255,255,0.25)"/>
+    
+    <!-- Center seam -->
+    <line x1="50" y1="10" x2="50" y2="70" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    
+    <!-- Button -->
+    <circle cx="50" cy="14" r="2.5" fill="rgba(255,255,255,0.5)"/>
+  </g>
+  
+  <!-- Brand text -->
+  <text x="95" y="48" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" fill="url(#logoGradient)">
+    DENIM
+  </text>
+  <text x="95" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="400" fill="rgba(255,255,255,0.7)">
+    CO.
+  </text>
+  
+  <!-- Decorative accent line -->
+  <line x1="95" y1="52" x2="180" y2="52" stroke="url(#logoGradient2)" stroke-width="2" stroke-linecap="round"/>
+</svg>

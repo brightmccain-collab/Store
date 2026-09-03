@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Premium Jeans Store</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: white;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(240, 147, 251, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.02) 100%);
+      border-radius: 28px;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(118, 75, 162, 0.2) 0%, transparent 40%);
+      animation: liquidMove 12s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glossy-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.15) 0%, 
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 100%);
+      pointer-events: none;
+      border-radius: 28px 28px 0 0;
+      z-index: 1;
+    }
+    .light-reflection {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 20%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 15%);
+      animation: lightReflection 8s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 2;
+      mix-blend-mode: overlay;
+    }
+    @keyframes liquidMove {
+      0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      25% {
+        transform: translate(3%, 3%) rotate(2deg) scale(1.05);
+      }
+      50% {
+        transform: translate(-2%, 4%) rotate(-1deg) scale(0.98);
+      }
+      75% {
+        transform: translate(4%, -3%) rotate(3deg) scale(1.02);
+      }
+    }
+    @keyframes lightReflection {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+      }
+      100% {
+        transform: translate(5%, 5%) scale(1.1);
+        opacity: 0.8;
+      }
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      margin-bottom: 20px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 3;
+    }
+    .back-link:hover {
+      color: white;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    .back-link span {
+      margin-right: 8px;
+    }
+    h1 {
+      color: white;
+      margin-bottom: 10px;
+      font-size: 32px;
+      position: relative;
+      z-index: 3;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .product-summary {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.2));
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 3;
+      backdrop-filter: blur(10px);
+    }
+    .product-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    }
+    .product-price {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease infinite;
+      text-shadow: 0 2px 15px rgba(102, 126, 234, 0.4);
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 3;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      font-size: 14px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    input, select {
+      width: 100%;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      font-size: 16px;
+      color: white;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: rgba(102, 126, 234, 0.6);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    option {
+      background: #1a1a2e;
+      color: white;
+    }
+    .row {
+      display: flex;
+      gap: 15px;
+    }
+    .row .form-group {
+      flex: 1;
+    }
+    button {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      margin-top: 10px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 3;
+      overflow: hidden;
+      box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s ease;
+    }
+    button:hover::before {
+      left: 100%;
+    }
+    button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 15px 35px rgba(102, 126, 234, 0.5),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    }
+    button:disabled {
+      background: rgba(255, 255, 255, 0.1);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .success-message {
+      display: none;
+      background: linear-gradient(135deg, rgba(212, 237, 218, 0.3), rgba(195, 230, 203, 0.2));
+      border: 1px solid rgba(195, 230, 203, 0.4);
+      color: #d4edda;
+      padding: 24px;
+      border-radius: 16px;
+      margin-top: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 3;
+    }
+    .success-message h3 {
+      margin-bottom: 12px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    .success-message p {
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    .success-message a {
+      color: #667eea;
+      text-decoration: underline;
+    }
+    .payment-intent-id {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 16px;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 14px;
+      word-break: break-all;
+      margin: 16px 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .error-message {
+      display: none;
+      background: linear-gradient(135deg, rgba(248, 215, 218, 0.3), rgba(245, 198, 203, 0.2));
+      border: 1px solid rgba(245, 198, 203, 0.4);
+      color: #f8d7da;
+      padding: 20px;
+      border-radius: 16px;
+      margin-top: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 3;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      position: relative;
+      z-index: 3;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .section-title {
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 18px;
+      font-weight: 600;
+      margin: 25px 0 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 3;
+    }
+    #auth-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    .auth-button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .auth-button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .auth-button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .auth-button.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-email {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .nav-link:hover {
+      color: white;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    .cart-icon {
+      position: relative;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    .cart-icon:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .checkout-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-header">
+    <div class="header-left">
+      <a href="/landing.html" style="text-decoration: none;">
+        <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 150px; height: auto; filter: drop-shadow(0 2px 10px rgba(102, 126, 234, 0.3));">
+      </a>
+      <nav class="nav-links">
+        <a href="/landing.html" class="nav-link">Shop</a>
+        <a href="#" class="nav-link">New Arrivals</a>
+        <a href="#" class="nav-link">About</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="cart-icon" onclick="alert('Shopping cart coming soon!')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span class="cart-count">0</span>
+      </div>
+      <div id="auth-container"></div>
+    </div>
+  </div>
+
+  <div class="checkout-wrapper">
+    <div class="container">
+      <div class="glossy-overlay"></div>
+      <div class="light-reflection"></div>
+      <a href="/landing.html" class="back-link">
+        <span>←</span> Back to Products
+      </a>
+    
+    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+      <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 200px; height: auto; filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.4));">
+    </div>
+    
+    <h1>Jeans Checkout</h1>
+    
+    <div class="product-summary" id="product-summary">
+      <div class="product-name" id="product-name">Loading...</div>
+      <div class="product-price" id="product-price">$0.00</div>
+    </div>
+    
+    <form id="checkout-form">
+      <h2 class="section-title">Personal Information</h2>
+      
+      <div class="form-group">
+        <label for="name">Full Name *</label>
+        <input type="text" id="name" name="name" required placeholder="John Doe">
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required placeholder="john@example.com">
+      </div>
+      
+      <h2 class="section-title">Billing Address *</h2>
+      
+      <div class="form-group">
+        <label for="address-line1">Address Line 1 *</label>
+        <input type="text" id="address-line1" name="address-line1" required placeholder="123 Main Street">
+      </div>
+      
+      <div class="row">
+        <div class="form-group">
+          <label for="city">City *</label>
+          <input type="text" id="city" name="city" required placeholder="New York">
+        </div>
+        <div class="form-group">
+          <label for="state">State *</label>
+          <input type="text" id="state" name="state" required placeholder="NY" maxlength="2" style="text-transform: uppercase;">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="postal-code">ZIP Code *</label>
+        <input type="text" id="postal-code" name="postal-code" required placeholder="10001" pattern="[0-9]{5}">
+      </div>
+      
+      <div class="form-group" style="margin-top: 20px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input type="checkbox" id="same-as-billing" name="same-as-billing" checked style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="color: rgba(255, 255, 255, 0.9); font-size: 14px;">Shipping address same as billing address</span>
+        </label>
+      </div>
+      
+      <h2 class="section-title" id="shipping-title" style="display: none;">Shipping Address *</h2>
+      
+      <div id="shipping-address-section" style="display: none;">
+        <div class="form-group">
+          <label for="shipping-line1">Shipping Address Line 1 *</label>
+          <input type="text" id="shipping-line1" name="shipping-line1" placeholder="123 Main Street">
+        </div>
+        
+        <div class="row">
+          <div class="form-group">
+            <label for="shipping-city">City *</label>
+            <input type="text" id="shipping-city" name="shipping-city" placeholder="New York">
+          </div>
+          <div class="form-group">
+            <label for="shipping-state">State *</label>
+            <input type="text" id="shipping-state" name="shipping-state" placeholder="NY" maxlength="2" style="text-transform: uppercase;">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="shipping-postal-code">ZIP Code *</label>
+          <input type="text" id="shipping-postal-code" name="shipping-postal-code" placeholder="10001" pattern="[0-9]{5}">
+        </div>
+      </div>
+      
+      <h2 class="section-title">Bank Account Details *</h2>
+      
+      <div class="form-group">
+        <label for="routing-number">Routing Number *</label>
+        <input type="text" id="routing-number" name="routing-number" required placeholder="9-digit routing number" pattern="[0-9]{9}" maxlength="9">
+      </div>
+      
+      <div class="form-group">
+        <label for="account-number">Account Number *</label>
+        <input type="text" id="account-number" name="account-number" required placeholder="Bank account number">
+      </div>
+      
+      <div class="row">
+        <div class="form-group">
+          <label for="account-type">Account Type *</label>
+          <select id="account-type" name="account-type" required>
+            <option value="">Select type</option>
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="account-holder-type">Holder Type *</label>
+          <select id="account-holder-type" name="account-holder-type" required>
+            <option value="">Select type</option>
+            <option value="individual">Individual</option>
+            <option value="company">Company</option>
+          </select>
+        </div>
+      </div>
+      
+      <button type="submit" id="submit-btn">Complete Purchase</button>
+    </form>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Processing your payment...</p>
+    </div>
+    
+    <div class="success-message" id="success-message">
+      <h3>✓ Bank Account Setup Initiated Successfully</h3>
+      <p>Your Setup Intent ID is:</p>
+      <div class="payment-intent-id" id="payment-intent-id"></div>
+      <p><strong>Please save this ID for verification.</strong></p>
+      <p>You will receive two small micro-deposits (less than $1.00 each) in your bank account within 1-2 business days.</p>
+      <p>Once you receive the deposits, check your bank statement for a 6-character descriptor code (e.g., SM1234) and visit the <a href="/verify.html">verification page</a> to complete your jeans purchase.</p>
+      <p style="margin-top: 15px; font-size: 14px; color: rgba(255,255,255,0.7);">After verification, your actual payment will be processed automatically and your jeans will be shipped.</p>
+    </div>
+    
+    <div class="error-message" id="error-message"></div>
+  </div>
+  </div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    // Initialize Stripe with your publishable key
+    const stripe = Stripe('pk_live_51Tgmk7RYbXTHJC1tWVfSxiitPQvhftg6UPoaoVnQG8DShKeqRDznNE6mK9JmlG57KOHutri48XvOr17peggNV4tU00gew6CTtS');
+    
+    // Load selected product from localStorage
+    function loadSelectedProduct() {
+      try {
+        const selectedProduct = localStorage.getItem('selectedProduct');
+        if (selectedProduct) {
+          const product = JSON.parse(selectedProduct);
+          document.getElementById('product-name').textContent = product.name;
+          document.getElementById('product-price').textContent = '$' + product.price.toFixed(2);
+          return product;
+        } else {
+          // If no product selected, redirect to landing page
+          window.location.href = '/landing.html';
+          return null;
+        }
+      } catch (error) {
+        console.error('localStorage access blocked by tracking prevention:', error);
+        // Redirect to landing page if localStorage is not accessible
+        window.location.href = '/landing.html';
+        return null;
+      }
+    }
+    
+    // Load product on page load
+    const selectedProduct = loadSelectedProduct();
+    
+    // Check authentication status on page load
+    async function checkAuth() {
+      try {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          // User is logged in
+          updateAuthUI(true, data.user.email);
+        } else {
+          // User is not logged in
+          updateAuthUI(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        updateAuthUI(false);
+      }
+    }
+    
+    function updateAuthUI(isAuthenticated, userEmail) {
+      const authContainer = document.getElementById('auth-container');
+      if (authContainer) {
+        if (isAuthenticated) {
+          authContainer.innerHTML = `
+            <div class="user-info">
+              <span class="user-email">${userEmail}</span>
+              <button onclick="logout()" class="auth-button">Logout</button>
+            </div>
+          `;
+        } else {
+          authContainer.innerHTML = `
+            <button onclick="window.location.href='/login.html'" class="auth-button">Login</button>
+            <button onclick="window.location.href='/register.html'" class="auth-button secondary">Register</button>
+          `;
+        }
+      }
+    }
+    
+    async function logout() {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/landing.html';
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
+    // Run auth check on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      
+      // Handle "same as billing" checkbox
+      const sameAsBillingCheckbox = document.getElementById('same-as-billing');
+      const shippingSection = document.getElementById('shipping-address-section');
+      const shippingTitle = document.getElementById('shipping-title');
+      
+      if (sameAsBillingCheckbox) {
+        sameAsBillingCheckbox.addEventListener('change', function() {
+          if (this.checked) {
+            shippingSection.style.display = 'none';
+            shippingTitle.style.display = 'none';
+          } else {
+            shippingSection.style.display = 'block';
+            shippingTitle.style.display = 'block';
+          }
+        });
+      }
+    });
+    
+    const form = document.getElementById('checkout-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const loading = document.getElementById('loading');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    const paymentIntentIdDisplay = document.getElementById('payment-intent-id');
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!selectedProduct) {
+        window.location.href = '/landing.html';
+        return;
+      }
+      
+      // Consistency checks before submission
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      
+      // Basic validation
+      if (name.length < 2) {
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Please enter a valid name (at least 2 characters)';
+        return;
+      }
+      
+      if (email.length < 5 || !email.includes('@')) {
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Please enter a valid email address';
+        return;
+      }
+      
+      // Check if name appears to match email (basic heuristic)
+      const emailNamePart = email.split('@')[0].toLowerCase().replace(/[._-]/g, '');
+      const nameParts = name.toLowerCase().split(' ');
+      const nameMatch = nameParts.some(part => emailNamePart.includes(part) || part.includes(emailNamePart));
+      
+      if (!nameMatch && nameParts.length >= 1) {
+        // Log warning but don't block - this is just a heuristic
+        console.warn('Name and email do not appear to match. This may trigger fraud detection.');
+      }
+      
+      // Reset states
+      successMessage.style.display = 'none';
+      errorMessage.style.display = 'none';
+      loading.style.display = 'block';
+      submitBtn.disabled = true;
+      
+      try {
+        // Step 1: Generate Radar session for advanced fraud detection
+        const { radarSession, error: radarError } = await stripe.createRadarSession();
+        
+        if (radarError) {
+          console.warn("Radar session warning:", radarError.message);
+        }
+
+        // Collect form data
+        const sameAsBilling = document.getElementById('same-as-billing').checked;
+        let shippingAddress;
+        
+        if (sameAsBilling) {
+          shippingAddress = {
+            line1: document.getElementById('address-line1').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            state: document.getElementById('state').value.trim().toUpperCase(),
+            postal_code: document.getElementById('postal-code').value.trim(),
+            country: 'US'
+          };
+        } else {
+          shippingAddress = {
+            line1: document.getElementById('shipping-line1').value.trim(),
+            city: document.getElementById('shipping-city').value.trim(),
+            state: document.getElementById('shipping-state').value.trim().toUpperCase(),
+            postal_code: document.getElementById('shipping-postal-code').value.trim(),
+            country: 'US'
+          };
+          
+          // Validate shipping address if different from billing
+          if (shippingAddress.line1.length < 5 || shippingAddress.city.length < 2 || 
+              shippingAddress.state.length !== 2 || shippingAddress.postal_code.length < 5) {
+            throw new Error('Please enter a complete and valid shipping address');
+          }
+        }
+        
+        const formData = {
+          name: name,
+          email: email,
+          address: {
+            line1: document.getElementById('address-line1').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            state: document.getElementById('state').value.trim().toUpperCase(),
+            postal_code: document.getElementById('postal-code').value.trim(),
+            country: 'US'
+          },
+          shippingAddress: shippingAddress,
+          routingNumber: document.getElementById('routing-number').value.trim(),
+          accountNumber: document.getElementById('account-number').value.trim(),
+          accountType: document.getElementById('account-type').value,
+          accountHolderType: document.getElementById('account-holder-type').value,
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          amount: selectedProduct.price * 100, // Convert to cents
+          radarSessionId: radarSession ? radarSession.id : null
+        };
+        
+        // Additional address validation
+        if (formData.address.line1.length < 5 || formData.address.city.length < 2 || 
+            formData.address.state.length !== 2 || formData.address.postal_code.length < 5) {
+          throw new Error('Please enter a complete and valid address');
+        }
+        
+        // Step 2: Create SetupIntent via backend (instead of PaymentIntent)
+        const response = await fetch('/create-setup-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create setup intent');
+        }
+        
+        const { clientSecret, setupIntentId, customerId, amount, productName } = data;
+        
+        // Step 3: Collect bank account details using Stripe.js
+        // This generates Radar browser fingerprints for fraud prevention
+        const { error, setupIntent } = await stripe.confirmUsBankAccountSetup(
+          clientSecret,
+          {
+            payment_method: {
+              billing_details: {
+                name: formData.name,
+                email: formData.email,
+                address: {
+                  line1: formData.address.line1,
+                  city: formData.address.city,
+                  state: formData.address.state,
+                  postal_code: formData.address.postal_code,
+                  country: formData.address.country
+                }
+              },
+              us_bank_account: {
+                routing_number: formData.routingNumber,
+                account_number: formData.accountNumber,
+                account_holder_type: formData.accountHolderType,
+                account_type: formData.accountType
+              }
+            }
+          }
+        );
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        // Store verification data for later use
+        try {
+          localStorage.setItem('verificationData', JSON.stringify({
+            setupIntentId: setupIntentId,
+            customerId: customerId,
+            amount: amount,
+            productName: productName
+          }));
+        } catch (error) {
+          console.error('localStorage access blocked by tracking prevention:', error);
+          // Continue anyway - we'll pass the data via URL parameters if needed
+        }
+        
+        // Step 4: Show success message and redirect to verification
+        loading.style.display = 'none';
+        successMessage.style.display = 'block';
+        paymentIntentIdDisplay.textContent = setupIntentId;
+        form.style.display = 'none';
+        document.getElementById('product-summary').style.display = 'none';
+        
+        // Update the verification link to include SetupIntent ID as fallback
+        const verifyLink = document.querySelector('a[href="/verify.html"]');
+        if (verifyLink) {
+          verifyLink.href = `/verify.html?setupIntentId=${encodeURIComponent(setupIntentId)}&customerId=${encodeURIComponent(customerId)}&amount=${encodeURIComponent(amount)}&productName=${encodeURIComponent(productName)}`;
+        }
+        
+      } catch (error) {
+        console.error('Payment error:', error);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = error.message || 'An error occurred during payment processing';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

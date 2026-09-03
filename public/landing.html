@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Jeans Store - Denim Collection</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: white;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(240, 147, 251, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .nav-link:hover {
+      color: white;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    .cart-icon {
+      position: relative;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    .cart-icon:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: linear-gradient(135deg, #667eea, #f093fb);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    #auth-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .auth-button {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .auth-button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .auth-button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .auth-button.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-email {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #667eea 75%, #764ba2 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease infinite;
+      text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .subtitle {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 300;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      padding: 20px 0;
+    }
+    .product-card {
+      position: relative;
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.02) 100%);
+      border-radius: 28px;
+      padding: 32px;
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      cursor: pointer;
+    }
+    .product-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.2) 0%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.05) 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .product-card:hover::before {
+      opacity: 1;
+    }
+    .product-card:hover {
+      transform: translateY(-16px) scale(1.03);
+      box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.4),
+        0 0 50px rgba(102, 126, 234, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -2px 0 rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .liquid-effect {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(118, 75, 162, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(240, 147, 251, 0.4) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.3) 0%, transparent 30%);
+      animation: liquidMove 12s ease-in-out infinite;
+      pointer-events: none;
+      opacity: 0.8;
+      mix-blend-mode: screen;
+      z-index: 0;
+    }
+    @keyframes liquidMove {
+      0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      25% {
+        transform: translate(3%, 3%) rotate(2deg) scale(1.05);
+      }
+      50% {
+        transform: translate(-2%, 4%) rotate(-1deg) scale(0.98);
+      }
+      75% {
+        transform: translate(4%, -3%) rotate(3deg) scale(1.02);
+      }
+    }
+    .glossy-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.25) 0%, 
+        rgba(255, 255, 255, 0.15) 30%,
+        rgba(255, 255, 255, 0.05) 60%,
+        transparent 100%);
+      pointer-events: none;
+      border-radius: 28px 28px 0 0;
+      z-index: 2;
+    }
+    .glossy-overlay::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        transparent 100%);
+      pointer-events: none;
+    }
+    .light-reflection {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: 
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 20%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 15%);
+      animation: lightReflection 8s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: overlay;
+    }
+    @keyframes lightReflection {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+      }
+      100% {
+        transform: translate(5%, 5%) scale(1.1);
+        opacity: 0.8;
+      }
+    }
+    .noise-texture {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 4;
+      mix-blend-mode: overlay;
+    }
+    .product-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 5;
+      transition: all 0.3s ease;
+      padding: 10px;
+    }
+    .product-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+    }
+    .product-card:hover .product-icon {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -2px 0 rgba(255, 255, 255, 0.2);
+    }
+    .product-name {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 5;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .product-description {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 5;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    }
+    .product-price {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 5;
+      animation: gradientShift 3s ease infinite;
+      text-shadow: 0 2px 15px rgba(102, 126, 234, 0.4);
+    }
+    .buy-button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 24px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 5;
+      overflow: hidden;
+      box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    .buy-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s ease;
+    }
+    .buy-button:hover::before {
+      left: 100%;
+    }
+    .buy-button:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 15px 35px rgba(102, 126, 234, 0.5),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    }
+    .product-card:nth-child(1) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(118, 75, 162, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.4) 0%, transparent 30%);
+    }
+    .product-card:nth-child(2) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(240, 147, 251, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(102, 126, 234, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(240, 147, 251, 0.4) 0%, transparent 30%);
+    }
+    .product-card:nth-child(3) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(118, 75, 162, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(240, 147, 251, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(118, 75, 162, 0.4) 0%, transparent 30%);
+    }
+    .product-card:nth-child(4) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(118, 75, 162, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.4) 0%, transparent 30%);
+    }
+    .product-card:nth-child(5) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(240, 147, 251, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(102, 126, 234, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(240, 147, 251, 0.4) 0%, transparent 30%);
+    }
+    .product-card:nth-child(6) .liquid-effect {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(118, 75, 162, 0.7) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(240, 147, 251, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(118, 75, 162, 0.4) 0%, transparent 30%);
+    }
+    @media (max-width: 768px) {
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 32px;
+      }
+      .subtitle {
+        font-size: 16px;
+      }
+      .main-header {
+        flex-direction: column;
+        gap: 20px;
+        padding: 15px 20px;
+      }
+      .header-left {
+        flex-direction: column;
+        gap: 15px;
+      }
+      .nav-links {
+        gap: 15px;
+        font-size: 14px;
+      }
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+    footer a:hover {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-header">
+    <div class="header-left">
+      <a href="/landing.html" style="text-decoration: none;">
+        <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 180px; height: auto; filter: drop-shadow(0 2px 10px rgba(102, 126, 234, 0.3));">
+      </a>
+      <nav class="nav-links">
+        <a href="/landing.html" class="nav-link">Shop</a>
+        <a href="#" class="nav-link">New Arrivals</a>
+        <a href="#" class="nav-link">About</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="cart-icon" onclick="alert('Shopping cart coming soon!')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+      </div>
+      <div id="auth-container"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px; position: relative;">
+        <img src="/images/accent-diamond.svg" alt="" style="position: absolute; left: 0; width: 60px; height: 60px; opacity: 0.6; animation: float 3s ease-in-out infinite;">
+        <img src="/images/logo.svg" alt="Denim Co. Logo" style="width: 200px; height: auto; filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.4)); z-index: 2;">
+        <img src="/images/accent-circle.svg" alt="" style="position: absolute; right: 0; width: 60px; height: 60px; opacity: 0.6; animation: float 3s ease-in-out infinite 1.5s;">
+      </div>
+      <h1>Premium Jeans Collection</h1>
+      <p class="subtitle">Discover our curated selection of high-quality denim for every style</p>
+      <div style="display: flex; justify-content: center; margin-top: 20px;">
+        <img src="/images/accent-wave.svg" alt="" style="width: 300px; height: auto; opacity: 0.7;">
+      </div>
+    </header>
+    
+    <div class="products-grid">
+      <div class="product-card" data-item="1" data-price="127" data-name="Classic Slim Fit Jeans">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-classic.svg" alt="Classic Slim Fit Jeans" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Classic Slim Fit Jeans</h3>
+        <p class="product-description">Timeless slim fit design with premium stretch denim for ultimate comfort and style.</p>
+        <div class="product-price">$127.00</div>
+        <button class="buy-button" onclick="selectProduct(1, 'Classic Slim Fit Jeans', 127)">Purchase Now</button>
+      </div>
+      
+      <div class="product-card" data-item="2" data-price="156" data-name="Vintage Wash Straight Leg">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-vintage.svg" alt="Vintage Wash Straight Leg" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Vintage Wash Straight Leg</h3>
+        <p class="product-description">Authentic vintage wash with classic straight leg cut for a relaxed, timeless look.</p>
+        <div class="product-price">$156.00</div>
+        <button class="buy-button" onclick="selectProduct(2, 'Vintage Wash Straight Leg', 156)">Purchase Now</button>
+      </div>
+      
+      <div class="product-card" data-item="3" data-price="99" data-name="Skinny High-Rise Denim">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-skinny.svg" alt="Skinny High-Rise Denim" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Skinny High-Rise Denim</h3>
+        <p class="product-description">Modern skinny fit with high-rise waist for a flattering silhouette.</p>
+        <div class="product-price">$99.00</div>
+        <button class="buy-button" onclick="selectProduct(3, 'Skinny High-Rise Denim', 99)">Purchase Now</button>
+      </div>
+      
+      <div class="product-card" data-item="4" data-price="175" data-name="Premium Raw Denim">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-wide.svg" alt="Premium Raw Denim" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Premium Raw Denim</h3>
+        <p class="product-description">Unwashed premium raw denim that develops unique character over time.</p>
+        <div class="product-price">$175.00</div>
+        <button class="buy-button" onclick="selectProduct(4, 'Premium Raw Denim', 175)">Purchase Now</button>
+      </div>
+      
+      <div class="product-card" data-item="5" data-price="142" data-name="Relaxed Tapered Fit">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-bootcut.svg" alt="Relaxed Tapered Fit" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Relaxed Tapered Fit</h3>
+        <p class="product-description">Comfortable relaxed fit with subtle taper for modern versatility.</p>
+        <div class="product-price">$142.00</div>
+        <button class="buy-button" onclick="selectProduct(5, 'Relaxed Tapered Fit', 142)">Purchase Now</button>
+      </div>
+      
+      <div class="product-card" data-item="6" data-price="118" data-name="Distressed Bootcut Style">
+        <div class="liquid-effect"></div>
+        <div class="glossy-overlay"></div>
+        <div class="light-reflection"></div>
+        <div class="noise-texture"></div>
+        <div class="product-icon">
+          <img src="/images/jeans-distressed.svg" alt="Distressed Bootcut Style" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h3 class="product-name">Distressed Bootcut Style</h3>
+        <p class="product-description">Edgy distressed details with classic bootcut silhouette for bold fashion statements.</p>
+        <div class="product-price">$118.00</div>
+        <button class="buy-button" onclick="selectProduct(6, 'Distressed Bootcut Style', 118)">Purchase Now</button>
+      </div>
+    </div>
+    
+    <footer style="margin-top: 80px; padding: 60px 40px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)); border-top: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px;">
+        <div>
+          <h4 style="color: white; font-size: 18px; margin-bottom: 20px; font-weight: 600;">Denim Co.</h4>
+          <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px; line-height: 1.6;">Premium quality denim for the modern individual. Crafted with care, designed for style.</p>
+        </div>
+        <div>
+          <h4 style="color: white; font-size: 16px; margin-bottom: 20px; font-weight: 600;">Shop</h4>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">All Jeans</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">New Arrivals</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Best Sellers</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Sale</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; font-size: 16px; margin-bottom: 20px; font-weight: 600;">Support</h4>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Contact Us</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">FAQs</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Shipping Info</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Returns</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; font-size: 16px; margin-bottom: 20px; font-weight: 600;">Legal</h4>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Privacy Policy</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Terms of Service</a></li>
+            <li style="margin-bottom: 12px;"><a href="#" style="color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; transition: color 0.3s;">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="max-width: 1400px; margin: 40px auto 0; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 13px;">
+        <p>&copy; 2024 Denim Co. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Stripe site-wide for fraud detection tracking
+    // This allows Stripe to build user behavior context before checkout
+    const stripe = Stripe('pk_live_51Tgmk7RYbXTHJC1tWVfSxiitPQvhftg6UPoaoVnQG8DShKeqRDznNE6mK9JmlG57KOHutri48XvOr17peggNV4tU00gew6CTtS');
+    
+    // Check authentication status on page load
+    async function checkAuth() {
+      try {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          // User is logged in
+          updateAuthUI(true, data.user.email);
+        } else {
+          // User is not logged in
+          updateAuthUI(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        updateAuthUI(false);
+      }
+    }
+    
+    function updateAuthUI(isAuthenticated, userEmail) {
+      const authContainer = document.getElementById('auth-container');
+      if (authContainer) {
+        if (isAuthenticated) {
+          authContainer.innerHTML = `
+            <div class="user-info">
+              <span class="user-email">${userEmail}</span>
+              <button onclick="logout()" class="auth-button">Logout</button>
+            </div>
+          `;
+        } else {
+          authContainer.innerHTML = `
+            <button onclick="window.location.href='/login.html'" class="auth-button">Login</button>
+            <button onclick="window.location.href='/register.html'" class="auth-button secondary">Register</button>
+          `;
+        }
+      }
+    }
+    
+    async function logout() {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/landing.html';
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
+    function selectProduct(itemId, itemName, price) {
+      // Check authentication before allowing purchase
+      fetch('/check-auth')
+        .then(response => response.json())
+        .then(data => {
+          if (data.authenticated) {
+            // User is authenticated, proceed to checkout
+            localStorage.setItem('selectedProduct', JSON.stringify({
+              id: itemId,
+              name: itemName,
+              price: price
+            }));
+            window.location.href = '/checkout.html';
+          } else {
+            // User is not authenticated, redirect to login
+            window.location.href = '/login.html';
+          }
+        })
+        .catch(error => {
+          console.error('Auth check error:', error);
+          window.location.href = '/login.html';
+        });
+    }
+    
+    // Run auth check on page load
+    document.addEventListener('DOMContentLoaded', checkAuth);
+  </script>
+</body>
+</html>

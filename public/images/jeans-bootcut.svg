@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="80" height="80">
+  <defs>
+    <linearGradient id="bootcutGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bootcutGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    <filter id="bootcutGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#bootcutGradient)" opacity="0.1"/>
+  
+  <!-- Jeans body - bootcut with flare -->
+  <path d="M45 40 L155 40 L160 45 L160 120 L155 145 L45 145 L40 120 L40 45 Z" 
+        fill="url(#bootcutGradient2)" filter="url(#bootcutGlow)" opacity="0.9"/>
+  
+  <!-- Waistband -->
+  <rect x="40" y="40" width="120" height="15" rx="3" fill="url(#bootcutGradient)" opacity="0.8"/>
+  
+  <!-- Belt loops -->
+  <ellipse cx="65" cy="47" rx="8" ry="4" fill="rgba(255,255,255,0.3)"/>
+  <ellipse cx="135" cy="47" rx="8" ry="4" fill="rgba(255,255,255,0.3)"/>
+  
+  <!-- Pocket detail -->
+  <path d="M75 75 L125 75 L120 90 L80 90 Z" fill="rgba(255,255,255,0.2)"/>
+  
+  <!-- Bootcut flare detail -->
+  <path d="M45 115 Q100 110 155 115" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+  <path d="M40 130 Q100 125 160 130" stroke="rgba(255,255,255,0.1)" stroke-width="1" fill="none"/>
+  
+  <!-- Seam lines -->
+  <line x1="100" y1="40" x2="100" y2="145" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <line x1="45" y1="40" x2="45" y2="145" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="155" y1="40" x2="155" y2="145" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  
+  <!-- Button -->
+  <circle cx="100" cy="47" r="3" fill="rgba(255,255,255,0.4)"/>
+  
+  <!-- Stitching detail -->
+  <path d="M43 42 L157 42" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="2,2"/>
+</svg>

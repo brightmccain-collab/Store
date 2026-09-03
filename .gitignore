@@ -1,0 +1,31 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Keep example file for reference
+!.env.example
+
+# User data
+users.json
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel/
