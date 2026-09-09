@@ -717,6 +717,12 @@
           const product = JSON.parse(selectedProduct);
           document.getElementById('product-name').textContent = product.name;
           document.getElementById('product-price').textContent = '$' + product.price.toFixed(2);
+          // Update product image based on product ID
+          const productImage = document.getElementById('product-image');
+          if (productImage) {
+            productImage.src = `/images/${product.id}.jpg`;
+            productImage.alt = product.name;
+          }
           return product;
         } else {
           // If no product selected, redirect to landing page

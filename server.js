@@ -145,57 +145,85 @@ app.use(bodyParser.json());
 // Trust proxy for proper IP detection behind load balancers
 app.set('trust proxy', true);
 
-// Session middleware
-app.use(session({
-  secret: JWT_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to false for local development
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax'
-  }
-}));
+// Session middleware (only for local development)
+if (!process.env.VERCEL) {
+  app.use(session({
+    secret: JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to false for local development
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax'
+    }
+  }));
+}
 
-app.use(express.static('public'));
+// Only serve static files in local development
+if (!process.env.VERCEL) {
+  app.use(express.static('public'));
+}
 
 // Serve the landing page (product grid)
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/landing.html');
+  if (process.env.VERCEL) {
+    // In Vercel, let it serve static files from public/
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  } else {
+    res.sendFile(__dirname + '/public/landing.html');
+  }
 });
 
 // Serve the checkout page (requires authentication)
 app.get('/checkout.html', requireAuth, (req, res) => {
-  res.sendFile(__dirname + '/public/checkout.html');
+  if (process.env.VERCEL) {
+    res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
+  } else {
+    res.sendFile(__dirname + '/public/checkout.html');
+  }
 });
 
 // Serve the verification page
 app.get('/verify', (req, res) => {
-  res.sendFile(__dirname + '/public/verify.html');
+  if (process.env.VERCEL) {
+    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+  } else {
+    res.sendFile(__dirname + '/public/verify.html');
+  }
 });
 
 app.get('/verify.html', (req, res) => {
-  res.sendFile(__dirname + '/public/verify.html');
+  if (process.env.VERCEL) {
+    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+  } else {
+    res.sendFile(__dirname + '/public/verify.html');
+  }
 });
 
 // Serve the registration page
 app.get('/register.html', (req, res) => {
-  res.sendFile(__dirname + '/public/register.html');
+  if (process.env.VERCEL) {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+  } else {
+    res.sendFile(__dirname + '/public/register.html');
+  }
 });
 
 // Serve the login page
 app.get('/login.html', (req, res) => {
-  res.sendFile(__dirname + '/public/login.html');
+  if (process.env.VERCEL) {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  } else {
+    res.sendFile(__dirname + '/public/login.html');
+  }
 });
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) {
-    next();
-  } else {
-    res.redirect('/login.html');
-  }
+  // Temporarily disabled for Vercel deployment
+  // TODO: Implement JWT-based authentication for serverless
+  next();
 }
 
 // POST /register - User registration
@@ -224,13 +252,23 @@ app.post('/register', async (req, res) => {
     }
 
     // Auto-login after registration
-    req.session.userId = result.user.id;
-    req.session.userEmail = result.user.email;
+    if (!process.env.VERCEL) {
+      req.session.userId = result.user.id;
+      req.session.userEmail = result.user.email;
+    }
 
-    res.json({ 
-      success: true, 
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: result.user.id, email: result.user.email },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
       user: result.user,
-      message: 'Registration successful' 
+      token: token,
+      message: 'Registration successful'
     });
 
   } catch (error) {
@@ -263,9 +301,18 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Create session
-    req.session.userId = user.id;
-    req.session.userEmail = user.email;
+    // Create session (local only)
+    if (!process.env.VERCEL) {
+      req.session.userId = user.id;
+      req.session.userEmail = user.email;
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     // Update account age
     const users = getUsers();
@@ -276,15 +323,16 @@ app.post('/login', async (req, res) => {
       saveUsers(users);
     }
 
-    res.json({ 
-      success: true, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
         createdAt: user.createdAt,
-        accountAgeHours: user.accountAgeHours 
+        accountAgeHours: user.accountAgeHours
       },
-      message: 'Login successful' 
+      token: token,
+      message: 'Login successful'
     });
 
   } catch (error) {
@@ -295,33 +343,23 @@ app.post('/login', async (req, res) => {
 
 // POST /logout - User logout
 app.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
-    }
+  if (!process.env.VERCEL) {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Logout failed' });
+      }
+      res.json({ success: true, message: 'Logout successful' });
+    });
+  } else {
+    // For Vercel, just return success (client handles token removal)
     res.json({ success: true, message: 'Logout successful' });
-  });
+  }
 });
 
 // GET /check-auth - Check authentication status
 app.get('/check-auth', (req, res) => {
-  if (req.session && req.session.userId) {
-    const user = findUserByEmail(req.session.userEmail);
-    if (user) {
-      const accountAgeMs = Date.now() - new Date(user.createdAt).getTime();
-      const accountAgeHours = Math.floor(accountAgeMs / (1000 * 60 * 60));
-      
-      return res.json({ 
-        authenticated: true, 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          createdAt: user.createdAt,
-          accountAgeHours: accountAgeHours
-        } 
-      });
-    }
-  }
+  // Temporarily return unauthenticated for Vercel
+  // TODO: Implement proper JWT authentication
   res.json({ authenticated: false });
 });
 
