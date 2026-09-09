@@ -503,6 +503,7 @@
     @media (max-width: 768px) {
       .products-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
       }
       h1 {
         font-size: 32px;
@@ -518,14 +519,66 @@
       .header-left {
         flex-direction: column;
         gap: 15px;
+        align-items: center;
       }
       .nav-links {
         gap: 15px;
         font-size: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
       .header-right {
         width: 100%;
         justify-content: space-between;
+      }
+      .product-card {
+        padding: 25px;
+      }
+      .product-icon {
+        width: 70px;
+        height: 70px;
+      }
+      .product-name {
+        font-size: 18px;
+      }
+      .product-price {
+        font-size: 24px;
+      }
+      button {
+        padding: 12px 24px;
+        font-size: 14px;
+      }
+      footer {
+        padding: 40px 20px;
+      }
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 24px;
+      }
+      .subtitle {
+        font-size: 14px;
+      }
+      .product-card {
+        padding: 20px;
+      }
+      .product-icon {
+        width: 60px;
+        height: 60px;
+      }
+      .product-name {
+        font-size: 16px;
+      }
+      .product-price {
+        font-size: 20px;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 13px;
       }
     }
     footer a:hover {
@@ -780,16 +833,35 @@
     
     function selectProduct(itemId, itemName, price) {
       // Check authentication before allowing purchase
-      fetch('/check-auth')
+      let headers = {
+        'Content-Type': 'application/json'
+      };
+
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('localStorage access blocked:', error);
+      }
+
+      fetch('/check-auth', {
+        headers: headers
+      })
         .then(response => response.json())
         .then(data => {
           if (data.authenticated) {
             // User is authenticated, proceed to checkout
-            localStorage.setItem('selectedProduct', JSON.stringify({
-              id: itemId,
-              name: itemName,
-              price: price
-            }));
+            try {
+              localStorage.setItem('selectedProduct', JSON.stringify({
+                id: itemId,
+                name: itemName,
+                price: price
+              }));
+            } catch (error) {
+              console.error('localStorage access blocked:', error);
+            }
             window.location.href = '/checkout.html';
           } else {
             // User is not authenticated, redirect to login
