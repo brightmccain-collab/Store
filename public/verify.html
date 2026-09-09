@@ -435,6 +435,37 @@
       margin: 0 auto;
       padding: 20px;
     }
+    .input-with-copy {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .input-with-copy input {
+      flex: 1;
+    }
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      color: white;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    .copy-btn:active {
+      transform: scale(0.95);
+    }
+    .copy-btn.copied {
+      background: rgba(76, 175, 80, 0.3);
+      border-color: rgba(76, 175, 80, 0.5);
+    }
     @media (max-width: 768px) {
       .main-header {
         flex-direction: column;
@@ -468,6 +499,7 @@
       button {
         padding: 12px 24px;
         font-size: 14px;
+        width: 100%;
       }
     }
     @media (max-width: 480px) {
@@ -475,20 +507,58 @@
         padding: 10px;
       }
       .container {
-        padding: 25px 15px;
+        padding: 20px 15px;
       }
       h1 {
-        font-size: 24px;
+        font-size: 22px;
       }
       button {
-        padding: 10px 20px;
-        font-size: 13px;
+        padding: 12px 20px;
+        font-size: 14px;
+        width: 100%;
       }
       .form-group label {
-        font-size: 14px;
+        font-size: 13px;
+      }
+      .form-group input {
+        font-size: 16px;
+        padding: 14px;
+      }
+      .info-section {
+        font-size: 13px;
+      }
+      .info-section p {
+        font-size: 12px;
+      }
+      .input-with-copy {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .input-with-copy input {
+        width: 100%;
+      }
+      .copy-btn {
+        width: 100%;
+        padding: 12px;
+      }
+    }
+    @media (max-width: 360px) {
+      .verify-wrapper {
+        padding: 8px;
+      }
+      .container {
+        padding: 15px 10px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 13px;
       }
       .form-group input {
         font-size: 14px;
+        padding: 12px;
       }
     }
   </style>
@@ -537,14 +607,23 @@
     <form id="verify-form">
       <div class="form-group">
         <label for="setup-intent-id">Setup Intent ID *</label>
-        <input type="text" id="setup-intent-id" name="setup-intent-id" required readonly style="background: rgba(255,255,255,0.1); cursor: not-allowed;">
+        <div class="input-with-copy">
+          <input type="text" id="setup-intent-id" name="setup-intent-id" required readonly style="background: rgba(255,255,255,0.1); cursor: pointer;">
+          <button type="button" class="copy-btn" onclick="copySetupIntentId()" title="Copy to clipboard">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <small style="color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px;">Click the field or copy button to copy</small>
       </div>
-      
+
       <div class="form-group">
         <label for="descriptor-code">6-Character Descriptor Code *</label>
         <input type="text" id="descriptor-code" name="descriptor-code" required placeholder="SM1234" maxlength="6" pattern="[A-Za-z0-9]{6}">
       </div>
-      
+
       <button type="submit" id="submit-btn">Verify and Complete Purchase</button>
     </form>
     
@@ -682,7 +761,43 @@
     
     // Load verification data on page load
     document.addEventListener('DOMContentLoaded', loadVerificationData);
-    
+
+    // Copy Setup Intent ID to clipboard
+    function copySetupIntentId() {
+      const setupIntentId = document.getElementById('setup-intent-id').value;
+      const copyBtn = document.querySelector('.copy-btn');
+
+      if (setupIntentId) {
+        navigator.clipboard.writeText(setupIntentId).then(() => {
+          // Show success feedback
+          copyBtn.classList.add('copied');
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            copyBtn.innerHTML = originalHTML;
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = setupIntentId;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        });
+      }
+    }
+
+    // Also copy when clicking the input field
+    document.getElementById('setup-intent-id').addEventListener('click', copySetupIntentId);
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
