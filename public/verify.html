@@ -734,14 +734,54 @@
     // Run auth check on page load
     document.addEventListener('DOMContentLoaded', checkAuth);
     
+    // Copy Setup Intent ID to clipboard
+    function copySetupIntentId() {
+      const setupIntentId = document.getElementById('setup-intent-id').value;
+      const copyBtn = document.querySelector('.copy-btn');
+
+      if (setupIntentId) {
+        navigator.clipboard.writeText(setupIntentId).then(() => {
+          // Show success feedback
+          copyBtn.classList.add('copied');
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            copyBtn.innerHTML = originalHTML;
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = setupIntentId;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        });
+      }
+    }
+    
     // Load verification data from localStorage or URL parameters
     function loadVerificationData() {
+      const setupIntentInput = document.getElementById('setup-intent-id');
+      if (!setupIntentInput) {
+        console.error('Setup Intent ID input not found');
+        return;
+      }
+
       try {
         // First try localStorage
         const verificationData = localStorage.getItem('verificationData');
         if (verificationData) {
           const data = JSON.parse(verificationData);
-          document.getElementById('setup-intent-id').value = data.setupIntentId;
+          setupIntentInput.value = data.setupIntentId;
+          console.log('Setup Intent ID loaded from localStorage:', data.setupIntentId);
           return;
         }
       } catch (error) {
@@ -752,15 +792,16 @@
       const urlParams = new URLSearchParams(window.location.search);
       const setupIntentId = urlParams.get('setupIntentId');
       if (setupIntentId) {
-        document.getElementById('setup-intent-id').value = setupIntentId;
+        setupIntentInput.value = setupIntentId;
+        console.log('Setup Intent ID loaded from URL:', setupIntentId);
       } else {
-        // If no verification data in either localStorage or URL, redirect to landing page
-        window.location.href = '/landing.html';
+        console.log('No Setup Intent ID found in localStorage or URL');
+        // Don't redirect - let user enter manually
+        setupIntentInput.placeholder = 'Enter your Setup Intent ID';
+        setupIntentInput.readOnly = false;
+        setupIntentInput.style.cursor = 'text';
       }
     }
-    
-    // Load verification data on page load
-    document.addEventListener('DOMContentLoaded', loadVerificationData);
 
     // Copy Setup Intent ID to clipboard
     function copySetupIntentId() {
@@ -794,9 +835,18 @@
         });
       }
     }
-
-    // Also copy when clicking the input field
-    document.getElementById('setup-intent-id').addEventListener('click', copySetupIntentId);
+    
+    // Run auth check and load verification data on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadVerificationData();
+      
+      // Also copy when clicking the input field
+      const setupIntentInput = document.getElementById('setup-intent-id');
+      if (setupIntentInput) {
+        setupIntentInput.addEventListener('click', copySetupIntentId);
+      }
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
