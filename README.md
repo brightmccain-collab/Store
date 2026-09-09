@@ -1,4 +1,4 @@
-# Denim Co. - Premium Jeans Store
+# Jason Enriquez - Premium Jeans Store
 
 A Node.js + Express e-commerce store using Stripe ACH Direct Debit with manual micro-deposit verification.
 
