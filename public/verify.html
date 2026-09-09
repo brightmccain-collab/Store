@@ -524,9 +524,25 @@
     // Check authentication status on page load
     async function checkAuth() {
       try {
-        const response = await fetch('/check-auth');
+        // Get token from localStorage
+        let headers = {
+          'Content-Type': 'application/json'
+        };
+
+        try {
+          const token = localStorage.getItem('authToken');
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+        } catch (error) {
+          console.error('localStorage access blocked:', error);
+        }
+
+        const response = await fetch('/check-auth', {
+          headers: headers
+        });
         const data = await response.json();
-        
+
         if (data.authenticated) {
           // User is logged in
           updateAuthUI(true, data.user.email);
@@ -561,6 +577,13 @@
     
     async function logout() {
       try {
+        // Remove token from localStorage
+        try {
+          localStorage.removeItem('authToken');
+        } catch (error) {
+          console.error('localStorage access blocked:', error);
+        }
+
         const response = await fetch('/logout', {
           method: 'POST'
         });

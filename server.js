@@ -175,8 +175,8 @@ app.get('/', (req, res) => {
   }
 });
 
-// Serve the checkout page (requires authentication)
-app.get('/checkout.html', requireAuth, (req, res) => {
+// Serve the checkout page (authentication handled by frontend)
+app.get('/checkout.html', (req, res) => {
   if (process.env.VERCEL) {
     res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
   } else {
@@ -221,9 +221,29 @@ app.get('/login.html', (req, res) => {
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  // Temporarily disabled for Vercel deployment
-  // TODO: Implement JWT-based authentication for serverless
-  next();
+  if (process.env.VERCEL) {
+    // In Vercel, check for JWT token in header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+        return;
+      } catch (error) {
+        // Token invalid
+      }
+    }
+    res.redirect('/login.html');
+  } else {
+    // Local development: use session
+    if (req.session && req.session.userId) {
+      next();
+    } else {
+      res.redirect('/login.html');
+    }
+  }
 }
 
 // POST /register - User registration
@@ -358,9 +378,54 @@ app.post('/logout', (req, res) => {
 
 // GET /check-auth - Check authentication status
 app.get('/check-auth', (req, res) => {
-  // Temporarily return unauthenticated for Vercel
-  // TODO: Implement proper JWT authentication
-  res.json({ authenticated: false });
+  if (process.env.VERCEL) {
+    // In Vercel, check for JWT token in header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = findUserByEmail(decoded.email);
+        if (user) {
+          const accountAgeMs = Date.now() - new Date(user.createdAt).getTime();
+          const accountAgeHours = Math.floor(accountAgeMs / (1000 * 60 * 60));
+
+          return res.json({
+            authenticated: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              createdAt: user.createdAt,
+              accountAgeHours: accountAgeHours
+            }
+          });
+        }
+      } catch (error) {
+        // Token invalid
+      }
+    }
+    res.json({ authenticated: false });
+  } else {
+    // Local development: use session
+    if (req.session && req.session.userId) {
+      const user = findUserByEmail(req.session.userEmail);
+      if (user) {
+        const accountAgeMs = Date.now() - new Date(user.createdAt).getTime();
+        const accountAgeHours = Math.floor(accountAgeMs / (1000 * 60 * 60));
+
+        return res.json({
+          authenticated: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            createdAt: user.createdAt,
+            accountAgeHours: accountAgeHours
+          }
+        });
+      }
+    }
+    res.json({ authenticated: false });
+  }
 });
 
 // POST /create-setup-intent - Create SetupIntent for bank account verification
