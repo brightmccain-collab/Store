@@ -608,7 +608,7 @@
       <div class="form-group">
         <label for="setup-intent-id">Setup Intent ID *</label>
         <div class="input-with-copy">
-          <input type="text" id="setup-intent-id" name="setup-intent-id" required readonly style="background: rgba(255,255,255,0.1); cursor: pointer;">
+          <input type="text" id="setup-intent-id" name="setup-intent-id" required placeholder="Paste or enter your Setup Intent ID" style="background: rgba(255,255,255,0.1); cursor: text;">
           <button type="button" class="copy-btn" onclick="copySetupIntentId()" title="Copy to clipboard">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -616,7 +616,7 @@
             </svg>
           </button>
         </div>
-        <small style="color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px;">Click the field or copy button to copy</small>
+        <small style="color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px;">Enter your Setup Intent ID or paste it from your bank statement</small>
       </div>
 
       <div class="form-group">
@@ -796,10 +796,7 @@
         console.log('Setup Intent ID loaded from URL:', setupIntentId);
       } else {
         console.log('No Setup Intent ID found in localStorage or URL');
-        // Don't redirect - let user enter manually
-        setupIntentInput.placeholder = 'Enter your Setup Intent ID';
-        setupIntentInput.readOnly = false;
-        setupIntentInput.style.cursor = 'text';
+        // User can enter manually - field is already editable
       }
     }
 
@@ -840,12 +837,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       checkAuth();
       loadVerificationData();
-      
-      // Also copy when clicking the input field
-      const setupIntentInput = document.getElementById('setup-intent-id');
-      if (setupIntentInput) {
-        setupIntentInput.addEventListener('click', copySetupIntentId);
-      }
     });
 
     form.addEventListener('submit', async (e) => {
