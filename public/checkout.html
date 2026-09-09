@@ -1209,8 +1209,7 @@
         successMessage.style.display = 'block';
         paymentIntentIdDisplay.textContent = setupIntentId;
         form.style.display = 'none';
-        document.getElementById('product-summary').style.display = 'none';
-        
+
         // Update the verification link to include SetupIntent ID as fallback
         const verifyLink = document.querySelector('a[href="/verify.html"]');
         if (verifyLink) {
