@@ -744,35 +744,57 @@
         }
         
         // Step 1: Verify the microdeposits against SetupIntent
-        const verifyResponse = await fetch('/verify-setup-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        let verifyResponse;
+        let verifyData;
         
-        const verifyData = await verifyResponse.json();
+        try {
+          verifyResponse = await fetch('/verify-setup-intent', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+          });
+          
+          verifyData = await verifyResponse.json();
+        } catch (networkError) {
+          // Handle network errors (connection closed, timeout, etc.)
+          console.error('Network error during verification:', networkError);
+          throw new Error('Network error during verification. Please check your connection and try again. If the problem persists, please contact support.');
+        }
         
         if (!verifyResponse.ok) {
+          // Check if it's a descriptor code mismatch error
+          if (verifyData.error && verifyData.error.includes('does not match')) {
+            throw new Error('The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe. ' + verifyData.error);
+          }
           throw new Error(verifyData.error || 'Failed to verify micro-deposits');
         }
         
         // Step 2: Execute the actual payment using the verified payment method
-        const paymentResponse = await fetch('/execute-payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            paymentMethodId: verifyData.paymentMethodId,
-            customerId: verifyData.customerId,
-            amount: verifyData.amount,
-            productName: verifyData.productName
-          })
-        });
+        let paymentResponse;
+        let paymentData;
         
-        const paymentData = await paymentResponse.json();
+        try {
+          paymentResponse = await fetch('/execute-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              paymentMethodId: verifyData.paymentMethodId,
+              customerId: verifyData.customerId,
+              amount: verifyData.amount,
+              productName: verifyData.productName
+            })
+          });
+          
+          paymentData = await paymentResponse.json();
+        } catch (networkError) {
+          // Handle network errors (connection closed, timeout, etc.)
+          console.error('Network error during payment execution:', networkError);
+          throw new Error('Network error during payment processing. Please check your connection and try again. If the problem persists, please contact support.');
+        }
         
         if (!paymentResponse.ok) {
           throw new Error(paymentData.error || 'Failed to execute payment');

@@ -850,8 +850,14 @@ app.post('/verify-setup-intent', async (req, res) => {
     verificationAttempts.set(setupIntentId, currentAttempts);
     const remainingAttempts = MAX_ATTEMPTS - currentAttempts.attempts;
     
+    // More user-friendly error message for descriptor code mismatch
+    let errorMessage = error.message;
+    if (error.message.includes('does not match')) {
+      errorMessage = 'The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe.';
+    }
+    
     res.status(400).json({ 
-      error: `${error.message}. You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.`
+      error: `${errorMessage} You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.`
     });
   }
 });
