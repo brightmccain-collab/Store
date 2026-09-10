@@ -818,6 +818,9 @@ app.post('/verify-setup-intent', async (req, res) => {
       // Reset attempts on successful status
       verificationAttempts.delete(setupIntentId);
       
+      // Schedule payment for next business day (ACH standard)
+      const nextBusinessDay = getNextBusinessDay();
+      
       return res.json({
         status: setupIntent.status,
         setupIntentId: setupIntent.id,
@@ -825,7 +828,9 @@ app.post('/verify-setup-intent', async (req, res) => {
         customerId: setupIntent.customer,
         amount: setupIntent.metadata.amount,
         productName: setupIntent.metadata.product_name,
-        alreadyVerified: true
+        alreadyVerified: true,
+        paymentScheduled: true,
+        scheduledDate: nextBusinessDay
       });
     }
 
@@ -843,13 +848,18 @@ app.post('/verify-setup-intent', async (req, res) => {
     // Reset attempts on successful verification
     verificationAttempts.delete(setupIntentId);
 
+    // Schedule payment for next business day (ACH standard)
+    const nextBusinessDay = getNextBusinessDay();
+    
     res.json({
       status: verifiedSetupIntent.status,
       setupIntentId: verifiedSetupIntent.id,
       paymentMethodId: paymentMethodId,
       customerId: verifiedSetupIntent.customer,
       amount: verifiedSetupIntent.metadata.amount,
-      productName: verifiedSetupIntent.metadata.product_name
+      productName: verifiedSetupIntent.metadata.product_name,
+      paymentScheduled: true,
+      scheduledDate: nextBusinessDay
     });
 
   } catch (error) {
@@ -879,14 +889,17 @@ app.post('/verify-setup-intent', async (req, res) => {
         errorMessage = 'The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe.';
       } else if (error.message.includes('already succeeded') || error.message.includes('succeeded')) {
         // This case is handled above, but provide a helpful message just in case
-        errorMessage = 'Your bank account has already been verified. You can proceed with your payment.';
+        errorMessage = 'Your bank account has already been verified. Your payment is scheduled for the next business day.';
         // Don't count this as a failed attempt
         verificationAttempts.delete(setupIntentId);
+        const nextBusinessDay = getNextBusinessDay();
         return res.status(200).json({
           status: 'succeeded',
           setupIntentId: setupIntentId,
           alreadyVerified: true,
-          error: 'Your bank account has already been verified. You can proceed with your payment.'
+          paymentScheduled: true,
+          scheduledDate: nextBusinessDay,
+          error: 'Your bank account has already been verified. Your payment is scheduled for the next business day.'
         });
       }
       
@@ -901,6 +914,24 @@ app.post('/verify-setup-intent', async (req, res) => {
     }
   }
 });
+
+// Helper function to get next business day
+function getNextBusinessDay() {
+  const date = new Date();
+  let daysToAdd = 1;
+  
+  // Skip weekends
+  while (daysToAdd <= 3) {
+    date.setDate(date.getDate() + 1);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Saturday (6) or Sunday (0)
+      break;
+    }
+    daysToAdd++;
+  }
+  
+  return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+}
 
 // POST /execute-payment - Execute actual payment after verification
 app.post('/execute-payment', async (req, res) => {

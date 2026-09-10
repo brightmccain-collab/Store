@@ -773,63 +773,29 @@
         
         // Check if the SetupIntent was already verified
         if (verifyData.alreadyVerified) {
-          console.log('SetupIntent already verified, proceeding to payment');
+          console.log('SetupIntent already verified, payment scheduled');
         }
         
-        // Step 2: Execute the actual payment using the verified payment method
-        let paymentResponse;
-        let paymentData;
-        
-        try {
-          paymentResponse = await fetch('/execute-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              paymentMethodId: verifyData.paymentMethodId,
-              customerId: verifyData.customerId,
-              amount: verifyData.amount,
-              productName: verifyData.productName
-            })
-          });
-          
-          paymentData = await paymentResponse.json();
-        } catch (networkError) {
-          // Handle network errors (connection closed, timeout, etc.)
-          console.error('Network error during payment execution:', networkError);
-          throw new Error('Network error during payment processing. Please check your connection and try again. If the problem persists, please contact support.');
-        }
-        
-        if (!paymentResponse.ok) {
-          throw new Error(paymentData.error || 'Failed to execute payment');
-        }
-        
-        // Show success message
+        // For ACH payments, the charge is scheduled for the next business day
+        // No immediate payment execution needed
         loading.style.display = 'none';
         successMessage.style.display = 'block';
         
-        // Handle different payment statuses
         const shippingInfo = document.getElementById('shipping-info');
         
-        if (paymentData.processing) {
-          paymentStatus.textContent = paymentData.message || 'Your payment is being processed. ACH payments typically take 1-2 business days to complete.';
-          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped once the payment completes. You will receive shipping confirmation via email.';
-        } else if (paymentData.requiresAction) {
-          paymentStatus.textContent = 'Payment requires additional action. Please follow the instructions provided.';
-          if (shippingInfo) shippingInfo.style.display = 'none';
-        } else if (paymentData.success) {
+        if (verifyData.paymentScheduled) {
+          const scheduledDate = verifyData.scheduledDate || 'next business day';
           if (verifyData.alreadyVerified) {
-            paymentStatus.textContent = `Your bank account was already verified! Payment completed successfully.`;
+            paymentStatus.textContent = `Your bank account was already verified! Your payment of $${(verifyData.amount / 100).toFixed(2)} is scheduled for ${scheduledDate}.`;
           } else {
-            paymentStatus.textContent = `Verification successful! Payment completed successfully.`;
+            paymentStatus.textContent = `Verification successful! Your payment of $${(verifyData.amount / 100).toFixed(2)} is scheduled for ${scheduledDate}.`;
           }
-          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped shortly. You will receive shipping confirmation via email.';
+          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped once the payment completes. You will receive shipping confirmation via email.';
         } else {
           if (verifyData.alreadyVerified) {
-            paymentStatus.textContent = `Your bank account was already verified! Payment status: ${paymentData.status}`;
+            paymentStatus.textContent = `Your bank account was already verified! Payment status: ${verifyData.status}`;
           } else {
-            paymentStatus.textContent = `Verification successful! Payment status: ${paymentData.status}`;
+            paymentStatus.textContent = `Verification successful! Payment status: ${verifyData.status}`;
           }
           if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped once the payment completes. You will receive confirmation via email.';
         }
