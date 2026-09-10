@@ -807,8 +807,30 @@ app.post('/verify-setup-intent', async (req, res) => {
       });
     }
 
+    // First, retrieve the SetupIntent to check its current status
+    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+    
+    // If the SetupIntent is already succeeded, return success without re-verifying
+    if (setupIntent.status === 'succeeded') {
+      console.log('SetupIntent already succeeded, skipping verification');
+      const paymentMethodId = setupIntent.payment_method;
+      
+      // Reset attempts on successful status
+      verificationAttempts.delete(setupIntentId);
+      
+      return res.json({
+        status: setupIntent.status,
+        setupIntentId: setupIntent.id,
+        paymentMethodId: paymentMethodId,
+        customerId: setupIntent.customer,
+        amount: setupIntent.metadata.amount,
+        productName: setupIntent.metadata.product_name,
+        alreadyVerified: true
+      });
+    }
+
     // Verify the microdeposits against SetupIntent
-    const setupIntent = await stripe.setupIntents.verifyMicrodeposits(
+    const verifiedSetupIntent = await stripe.setupIntents.verifyMicrodeposits(
       setupIntentId,
       {
         descriptor_code: descriptorCode
@@ -816,18 +838,18 @@ app.post('/verify-setup-intent', async (req, res) => {
     );
 
     // Get the payment method ID from the setup intent
-    const paymentMethodId = setupIntent.payment_method;
+    const paymentMethodId = verifiedSetupIntent.payment_method;
 
     // Reset attempts on successful verification
     verificationAttempts.delete(setupIntentId);
 
     res.json({
-      status: setupIntent.status,
-      setupIntentId: setupIntent.id,
+      status: verifiedSetupIntent.status,
+      setupIntentId: verifiedSetupIntent.id,
       paymentMethodId: paymentMethodId,
-      customerId: setupIntent.customer,
-      amount: setupIntent.metadata.amount,
-      productName: setupIntent.metadata.product_name
+      customerId: verifiedSetupIntent.customer,
+      amount: verifiedSetupIntent.metadata.amount,
+      productName: verifiedSetupIntent.metadata.product_name
     });
 
   } catch (error) {
@@ -855,6 +877,17 @@ app.post('/verify-setup-intent', async (req, res) => {
       let errorMessage = error.message;
       if (error.message.includes('does not match')) {
         errorMessage = 'The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe.';
+      } else if (error.message.includes('already succeeded') || error.message.includes('succeeded')) {
+        // This case is handled above, but provide a helpful message just in case
+        errorMessage = 'Your bank account has already been verified. You can proceed with your payment.';
+        // Don't count this as a failed attempt
+        verificationAttempts.delete(setupIntentId);
+        return res.status(200).json({
+          status: 'succeeded',
+          setupIntentId: setupIntentId,
+          alreadyVerified: true,
+          error: 'Your bank account has already been verified. You can proceed with your payment.'
+        });
       }
       
       res.status(400).json({ 

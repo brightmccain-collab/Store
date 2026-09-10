@@ -771,6 +771,11 @@
           throw new Error(verifyData.error || 'Failed to verify micro-deposits');
         }
         
+        // Check if the SetupIntent was already verified
+        if (verifyData.alreadyVerified) {
+          console.log('SetupIntent already verified, proceeding to payment');
+        }
+        
         // Step 2: Execute the actual payment using the verified payment method
         let paymentResponse;
         let paymentData;
@@ -803,7 +808,13 @@
         // Show success message
         loading.style.display = 'none';
         successMessage.style.display = 'block';
-        paymentStatus.textContent = `Verification successful! Payment status: ${paymentData.status}`;
+        
+        if (verifyData.alreadyVerified) {
+          paymentStatus.textContent = `Your bank account was already verified! Payment status: ${paymentData.status}`;
+        } else {
+          paymentStatus.textContent = `Verification successful! Payment status: ${paymentData.status}`;
+        }
+        
         form.style.display = 'none';
         
         // Clear verification data
