@@ -1,6 +1,6 @@
 {
   "name": "stripe-ach-microdeposits-store",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js + Express webstore using Stripe ACH Manual Micro-Deposits",
   "main": "server.js",
   "scripts": {
