@@ -585,7 +585,7 @@
       <h3>✓ Verification Successful!</h3>
       <p>Your payment has been verified and is now being processed.</p>
       <p><strong>Status:</strong> <span id="payment-status"></span></p>
-      <p>Your jeans will be shipped shortly. You will receive shipping confirmation via email.</p>
+      <p id="shipping-info">Your jeans will be shipped shortly. You will receive shipping confirmation via email.</p>
     </div>
     
     <div class="error-message" id="error-message"></div>
@@ -809,10 +809,29 @@
         loading.style.display = 'none';
         successMessage.style.display = 'block';
         
-        if (verifyData.alreadyVerified) {
-          paymentStatus.textContent = `Your bank account was already verified! Payment status: ${paymentData.status}`;
+        // Handle different payment statuses
+        const shippingInfo = document.getElementById('shipping-info');
+        
+        if (paymentData.processing) {
+          paymentStatus.textContent = paymentData.message || 'Your payment is being processed. ACH payments typically take 1-2 business days to complete.';
+          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped once the payment completes. You will receive shipping confirmation via email.';
+        } else if (paymentData.requiresAction) {
+          paymentStatus.textContent = 'Payment requires additional action. Please follow the instructions provided.';
+          if (shippingInfo) shippingInfo.style.display = 'none';
+        } else if (paymentData.success) {
+          if (verifyData.alreadyVerified) {
+            paymentStatus.textContent = `Your bank account was already verified! Payment completed successfully.`;
+          } else {
+            paymentStatus.textContent = `Verification successful! Payment completed successfully.`;
+          }
+          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped shortly. You will receive shipping confirmation via email.';
         } else {
-          paymentStatus.textContent = `Verification successful! Payment status: ${paymentData.status}`;
+          if (verifyData.alreadyVerified) {
+            paymentStatus.textContent = `Your bank account was already verified! Payment status: ${paymentData.status}`;
+          } else {
+            paymentStatus.textContent = `Verification successful! Payment status: ${paymentData.status}`;
+          }
+          if (shippingInfo) shippingInfo.textContent = 'Your jeans will be shipped once the payment completes. You will receive confirmation via email.';
         }
         
         form.style.display = 'none';

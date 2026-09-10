@@ -948,6 +948,48 @@ app.post('/execute-payment', async (req, res) => {
       }
     });
 
+    // Check if payment requires additional action
+    if (paymentIntent.status === 'requires_action' || paymentIntent.status === 'requires_source_action') {
+      return res.json({
+        status: paymentIntent.status,
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        requiresAction: true,
+        nextAction: paymentIntent.next_action
+      });
+    }
+
+    // Check if payment is processing (ACH payments take time)
+    if (paymentIntent.status === 'processing') {
+      return res.json({
+        status: paymentIntent.status,
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        processing: true,
+        message: 'Your payment is being processed. ACH payments typically take 1-2 business days to complete.'
+      });
+    }
+
+    // Payment succeeded
+    if (paymentIntent.status === 'succeeded') {
+      return res.json({
+        status: paymentIntent.status,
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        success: true
+      });
+    }
+
+    // Payment failed
+    if (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'canceled') {
+      return res.status(400).json({
+        error: 'Payment failed. Please try again with a different payment method or contact your bank.',
+        status: paymentIntent.status,
+        lastPaymentError: paymentIntent.last_payment_error
+      });
+    }
+
+    // Default response for other statuses
     res.json({
       status: paymentIntent.status,
       paymentIntentId: paymentIntent.id,
@@ -956,8 +998,27 @@ app.post('/execute-payment', async (req, res) => {
 
   } catch (error) {
     console.error('Error executing payment:', error);
+    
+    // Provide more user-friendly error messages for common ACH failures
+    let errorMessage = error.message;
+    
+    if (error.type === 'StripeCardError') {
+      errorMessage = 'Payment failed due to bank account issues. Please ensure your account has sufficient funds and is in good standing.';
+    } else if (error.type === 'StripeRateLimitError') {
+      errorMessage = 'Service temporarily unavailable. Please try again in a few minutes.';
+    } else if (error.type === 'StripeInvalidRequestError') {
+      errorMessage = 'Invalid payment request. Please try again or contact support.';
+    } else if (error.type === 'StripeAPIError') {
+      errorMessage = 'Payment service error. Please try again or contact support.';
+    } else if (error.type === 'StripeConnectionError') {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.type === 'StripeAuthenticationError') {
+      errorMessage = 'Authentication error. Please contact support.';
+    }
+    
     res.status(500).json({ 
-      error: error.message 
+      error: errorMessage,
+      originalError: error.message
     });
   }
 });
