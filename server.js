@@ -781,9 +781,9 @@ app.post('/create-intent', async (req, res) => {
 
 // POST /verify-setup-intent - Verify microdeposits against SetupIntent
 app.post('/verify-setup-intent', async (req, res) => {
+  const { setupIntentId, descriptorCode } = req.body;
+  
   try {
-    const { setupIntentId, descriptorCode } = req.body;
-
     // Validate required fields
     if (!setupIntentId || !descriptorCode) {
       return res.status(400).json({ 
@@ -833,32 +833,39 @@ app.post('/verify-setup-intent', async (req, res) => {
   } catch (error) {
     console.error('Error verifying setup intent microdeposits:', error);
     
-    // Track failed attempts
-    const currentAttempts = verificationAttempts.get(setupIntentId) || { attempts: 0, lastAttempt: 0, lockedUntil: 0 };
-    currentAttempts.attempts += 1;
-    currentAttempts.lastAttempt = Date.now();
-    
-    // Lock out after MAX_ATTEMPTS failed attempts
-    if (currentAttempts.attempts >= MAX_ATTEMPTS) {
-      currentAttempts.lockedUntil = Date.now() + LOCKOUT_DURATION;
+    // Track failed attempts (only if we have a valid setupIntentId)
+    if (setupIntentId) {
+      const currentAttempts = verificationAttempts.get(setupIntentId) || { attempts: 0, lastAttempt: 0, lockedUntil: 0 };
+      currentAttempts.attempts += 1;
+      currentAttempts.lastAttempt = Date.now();
+      
+      // Lock out after MAX_ATTEMPTS failed attempts
+      if (currentAttempts.attempts >= MAX_ATTEMPTS) {
+        currentAttempts.lockedUntil = Date.now() + LOCKOUT_DURATION;
+        verificationAttempts.set(setupIntentId, currentAttempts);
+        return res.status(429).json({
+          error: `Too many failed verification attempts. You have used all ${MAX_ATTEMPTS} attempts. Please contact support or wait 24 hours to try again.`
+        });
+      }
+      
       verificationAttempts.set(setupIntentId, currentAttempts);
-      return res.status(429).json({
-        error: `Too many failed verification attempts. You have used all ${MAX_ATTEMPTS} attempts. Please contact support or wait 24 hours to try again.`
+      const remainingAttempts = MAX_ATTEMPTS - currentAttempts.attempts;
+      
+      // More user-friendly error message for descriptor code mismatch
+      let errorMessage = error.message;
+      if (error.message.includes('does not match')) {
+        errorMessage = 'The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe.';
+      }
+      
+      res.status(400).json({ 
+        error: `${errorMessage} You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.`
+      });
+    } else {
+      // If setupIntentId is missing, return a generic error
+      res.status(400).json({ 
+        error: error.message || 'Failed to verify micro-deposits'
       });
     }
-    
-    verificationAttempts.set(setupIntentId, currentAttempts);
-    const remainingAttempts = MAX_ATTEMPTS - currentAttempts.attempts;
-    
-    // More user-friendly error message for descriptor code mismatch
-    let errorMessage = error.message;
-    if (error.message.includes('does not match')) {
-      errorMessage = 'The verification code you entered does not match the code sent to your bank account. Please check your bank statement for the exact 6-character code (e.g., SM1234) next to the two small deposits from Stripe.';
-    }
-    
-    res.status(400).json({ 
-      error: `${errorMessage} You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.`
-    });
   }
 });
 
